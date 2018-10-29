@@ -23,7 +23,7 @@ Currently, it uses one of GDAL's standalone programs, `gdallocationinfo` to be i
 
 ## A note to users
 
-This project currently requires two very large TIF files for the automatic land cover detection - one of mountain ranges supplied by the UNEP, and the other of a global land use dataset created by NASA from MODIS imagery. They are too large to host on Github - a V2 of this project will involve them being hosted on a cloud provider and having a REST API returning the values currently being generated locally. 
+This project currently requires two very large TIF files for the automatic land cover detection - one of mountain ranges supplied by the UNEP, and the other of a global land use dataset created by NASA from MODIS imagery. They are too large to host on Github uncompressed, and as such are stored in a tarball and need to be decompressed, and left in the same folder as the `getclass` shell script. They are just under 20gb uncompressed, so be sure you have enough disk space before decompressing. A V2 of this project will involve them being hosted on a cloud provider and having a REST API returning the values currently being generated locally. 
 
 ## Using and how it works
 
