@@ -11,6 +11,7 @@ import gdal
 import os
 from pyproj import Proj, transform
 import osr
+import operator
 
 import subprocess
 
@@ -188,7 +189,6 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
     MyMIDI.writeFile(binfile)
     binfile.close()
 
-
 def GetExtent(gt,cols,rows):
     ''' Return list of corner coordinates from a geotransform
 
@@ -214,7 +214,7 @@ def GetExtent(gt,cols,rows):
         yarr.reverse()
     return ext
 
-def getCentroid(image_path):
+def getCorners(image_path):
     ds=gdal.Open(image_path)
     proj = osr.SpatialReference(wkt=ds.GetProjection())
     projection_str = "epsg:"+ str(proj.GetAttrValue('AUTHORITY',1))
@@ -224,19 +224,22 @@ def getCentroid(image_path):
     cols = ds.RasterXSize
     rows = ds.RasterYSize
     ext=GetExtent(gt,cols,rows)
-    
-
     ul_lon = ext[0][0]
     ul_lat = ext[0][1]
     lr_lon = ext[2][0]
     lr_lat = ext[2][1]
 
-    
-
     ul = inProj(ul_lon, ul_lat, inverse=True)
     lr = inProj(lr_lon, lr_lat, inverse=True)
-    print(ul)
-    print(lr)
+
+    return [[ul[0], ul[1]], [lr[0], lr[1]]]
+
+
+def getCentroid(image_path):
+    ext = getCorners(image_path)
+    
+    ul = ext[0]
+    lr = ext[1]   
 
     md_lat = (ul[0] + lr[0]) / 2.0 + 1
     md_lon = (ul[1] + lr[1]) / 2.0 + 1
@@ -249,31 +252,52 @@ def getCentroid(image_path):
     #md_lat_wgs, md_lon_wgs = transform(inProj, outProj, md_lat, md_lon)
     return [md_lon, md_lat]
 
-def getClassificationValue(loc){
+def getClassificationValue(loc):
     s =  [os.getcwd() + "/getClass/getclass", \
-          str(image_location[0]) , \
-          str(image_location[1])]
-    #print(s)
-    p = subprocess.check_output(s).decode('UTF-8').replace("\n", "").replace("Value:", "").strip()
-    return p
-}
-def getClassification(image_path){
-    image_location = getCentroid(image_path)
-    p = getClassificationValue(image_location)
+          str(loc[0]) , \
+          str(loc[1])]
+    p = subprocess.check_output(s)
+    p = p.decode('UTF-8').replace("\n", "").replace("Value:", "").strip()
     return p
 
-}
+def getClassification(image_path, samples=0):
+    # Samples defines the number of random samples placed in the image to generate  
+
+    image_location = getCentroid(image_path)
+    if samples > 0:
+        p_dict = {}
+        corners = getCorners(image_path)
+        ul = corners[0]
+        lr = corners[1]
+        random_coords = [[float(random.uniform(ul[0], lr[0])),
+                          float(random.uniform(ul[1], lr[1]))] for _ in range(samples)]
+        random_coords.append(image_location)
+        
+        for c in random_coords:
+            p = getClassificationValue(list(c))
+            if p not in p_dict.keys():
+                p_dict[p] = 1
+            else:
+                p_dict[p] += 1
+        #print(p_dict)
+        return max(p_dict.items(), key=operator.itemgetter(1))[0]
+                
+
+        
+    else:
+        p = getClassificationValue(image_location)
+    return p
 
 def songSAT(image_path, output_midi="/tmp/OUT.mid"):
     
-    p = getClassification(image_location)
+    p = getClassification(image_path)
     if p == "MOUNTAIN":
         theme = "MOUNTAIN"
-    else if p == "0":
+    elif p == "0":
         theme = "WATER"
-    else if p == "1":
+    elif p == "1":
         theme = "FOREST"
-    else if p == "6" or p == "12" or p == "14" or p == "15":
+    elif p == "6" or p == "12" or p == "14" or p == "15":
         theme = "GRASSLAND"
     else:
         theme = "FAILED"
@@ -284,12 +308,5 @@ def songSAT(image_path, output_midi="/tmp/OUT.mid"):
         generate_song(image_path, theme,output_midi)
 
 
-songSAT("/home/alex/Documents/spaceapp/landsat/img.TIF")
-
-
-
-
-#generate_song("/home/alex/Documents/spaceapp/landsat_image.tif", theme="MOUNTAIN", output="/tmp/MOUNTAIN.mid")
-
-
-   
+#songSAT("/home/alex/Documents/spaceapp/landsat/img.TIF")
+print(getClassification("/home/alex/Documents/spaceapp/landsat/img.TIF", 300))
