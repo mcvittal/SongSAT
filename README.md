@@ -3,6 +3,24 @@ Hackathon entry for NASA Space Apps 2018. http://songsat.ca
 
 Converts image data to music given the theme. 
 
+## Library dependencies 
+
+Spatial manipulation dependencies:  
+`gdal`, `pyproj`, `osr`
+
+Image manipulation:  
+`matplotlib`, `PIL`, `numpy`
+
+MIDI:  
+`midiutil`
+
+Preinstalled system libraries:  
+`subprocess`, `os`, `random`
+
+## System dependencies
+
+Currently, it uses one of GDAL's standalone programs, `gdallocationinfo` to be installed and in the users path. This will change in V2 (See next section "A note to users") 
+
 ## A note to users
 
 This project currently requires two very large TIF files for the automatic land cover detection - one of mountain ranges supplied by the UNEP, and the other of a global land use dataset created by NASA from MODIS imagery. They are too large to host on Github - a V2 of this project will involve them being hosted on a cloud provider and having a REST API returning the values currently being generated locally. 
