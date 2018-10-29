@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-
 # 
 
 
@@ -9,6 +7,12 @@ from midiutil import MIDIFile
 from PIL import Image
 import matplotlib.image as mpimg
 import random
+import gdal
+import os
+from pyproj import Proj, transform
+import osr
+
+import subprocess
 
 
 def arpeggio(x):
@@ -30,7 +34,7 @@ def arpeggio(x):
            15:4}
     return dic[x]
 
-# Generates a thematic song in MIDI from input raster data. Three themes are available with more to come: A calming water song (WATER), a celtic-inspired country grassland style (GRASSLAND), and an intimidating mountain war march (MOUNTAIN). Further fine-tuning can be done within the method. 
+# Generates a thematic song in MIDI from input raster data. Four themes are available with more to come: A calming water song (WATER), a celtic-inspired country grassland style (GRASSLAND), soothing harp (FOREST), and an intimidating mountain war march (MOUNTAIN). Further fine-tuning can be done within the method. 
 def generate_song(image, theme="WATER", output="/tmp/default.mid"):
     rhythms_lst = {"WATER":[    [1, 1, 1, 0.5, 0.5],
                                 [2, 2],
@@ -184,7 +188,102 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
     MyMIDI.writeFile(binfile)
     binfile.close()
 
-generate_song("/home/alex/Documents/spaceapp/landsat_image.tif", theme="FOREST", output="/tmp/WATER.mid")
+
+def GetExtent(gt,cols,rows):
+    ''' Return list of corner coordinates from a geotransform
+
+        @type gt:   C{tuple/list}
+        @param gt: geotransform
+        @type cols:   C{int}
+        @param cols: number of columns in the dataset
+        @type rows:   C{int}
+        @param rows: number of rows in the dataset
+        @rtype:    C{[float,...,float]}
+        @return:   coordinates of each corner
+    '''
+    ext=[]
+    xarr=[0,cols]
+    yarr=[0,rows]
+
+    for px in xarr:
+        for py in yarr:
+            x=gt[0]+(px*gt[1])+(py*gt[2])
+            y=gt[3]+(px*gt[4])+(py*gt[5])
+            ext.append([x,y])
+            
+        yarr.reverse()
+    return ext
+
+def getCentroid(image_path):
+    ds=gdal.Open(image_path)
+    proj = osr.SpatialReference(wkt=ds.GetProjection())
+    projection_str = "epsg:"+ str(proj.GetAttrValue('AUTHORITY',1))
+    inProj = Proj(init=projection_str)
+    outProj = Proj(init='epsg:4326')
+    gt=ds.GetGeoTransform()
+    cols = ds.RasterXSize
+    rows = ds.RasterYSize
+    ext=GetExtent(gt,cols,rows)
+    
+
+    ul_lon = ext[0][0]
+    ul_lat = ext[0][1]
+    lr_lon = ext[2][0]
+    lr_lat = ext[2][1]
+
+    
+
+    ul = inProj(ul_lon, ul_lat, inverse=True)
+    lr = inProj(lr_lon, lr_lat, inverse=True)
+    print(ul)
+    print(lr)
+
+    md_lat = (ul[0] + lr[0]) / 2.0 + 1
+    md_lon = (ul[1] + lr[1]) / 2.0 + 1
+    print(md_lon)
+    # r = inProj(md_lon, md_lat, inverse=True)
+    #print(r)
+
+    print("{}, {}".format(md_lat, md_lon))
+
+    #md_lat_wgs, md_lon_wgs = transform(inProj, outProj, md_lat, md_lon)
+    return [md_lon, md_lat]
+
+
+
+def songSAT(image_path, output_midi="/tmp/OUT.mid"):
+    image_location = getCentroid(image_path)
+
+
+    s =  [os.getcwd() + "/getClass/getclass", \
+          str(image_location[0]) , \
+          str(image_location[1])]
+    print(s)
+    p = subprocess.check_output(s).decode('UTF-8').replace("\n", "").replace("Value:", "").strip()
+    print(p)
+    if p == "MOUNTAIN":
+        theme = "MOUNTAIN"
+    else if p == "0":
+        theme = "WATER"
+    else if p == "1":
+        theme = "FOREST"
+    else if p == "6" or p == "12" or p == "14" or p == "15":
+        theme = "GRASSLAND"
+    else:
+        theme = "FAILED"
+
+    if theme == "FAILED":
+        print("Sorry! This land cover is not yet supported by SongSAT! Check back again at a later time, or bug one of the developers on the project to implement it!")
+    else:
+        generate_song(image_path, theme,output_midi)
+
+
+songSAT("/home/alex/Documents/spaceapp/landsat/img.TIF")
+
+
+
+
+#generate_song("/home/alex/Documents/spaceapp/landsat_image.tif", theme="MOUNTAIN", output="/tmp/MOUNTAIN.mid")
 
 
    
