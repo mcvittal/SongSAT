@@ -110,7 +110,7 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
                "MOUNTAIN":60 - 12,
                "GRASSLAND":60 + 6,
                "FOREST":60}
-    octave = octaves[theme]
+    octave = octaves[theme] + random.randint(-6, 6)
     
     # Keep track of when midi events happen 
     time_upper = 0
