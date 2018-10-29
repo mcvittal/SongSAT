@@ -249,18 +249,24 @@ def getCentroid(image_path):
     #md_lat_wgs, md_lon_wgs = transform(inProj, outProj, md_lat, md_lon)
     return [md_lon, md_lat]
 
-
-
-def songSAT(image_path, output_midi="/tmp/OUT.mid"):
-    image_location = getCentroid(image_path)
-
-
+def getClassificationValue(loc){
     s =  [os.getcwd() + "/getClass/getclass", \
           str(image_location[0]) , \
           str(image_location[1])]
-    print(s)
+    #print(s)
     p = subprocess.check_output(s).decode('UTF-8').replace("\n", "").replace("Value:", "").strip()
-    print(p)
+    return p
+}
+def getClassification(image_path){
+    image_location = getCentroid(image_path)
+    p = getClassificationValue(image_location)
+    return p
+
+}
+
+def songSAT(image_path, output_midi="/tmp/OUT.mid"):
+    
+    p = getClassification(image_location)
     if p == "MOUNTAIN":
         theme = "MOUNTAIN"
     else if p == "0":
