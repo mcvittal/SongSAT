@@ -49,7 +49,11 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
                                 [1.5, 1.5, 0.5, 0.5, 0.5, 1.5],
                                 [6]],
                    "FOREST":[   [0.5, -0.5, 0.5, -0.5, 0.25, 0.75],
-                                [-0.5, 0.5, -0.5, 0.25, 0.25, 0.25, 0.25, 0.5, -0.5, 0.5]]
+                                [-0.5, 0.5, -0.5, 0.25, 0.25, 0.25, 0.25, 0.5, -0.5, 0.5]],
+                   "ARCTIC":[   [3],
+                                [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+                                [-3],
+                                [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]]
                                 }
     accompaniment_lst = {"WATER":[[3, 1],
                                   [1, 1, 1, 1],
@@ -63,18 +67,24 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
                                   [6], 
                                   [2, 1, 2, 1]],
                      "FOREST":[   [0.25] * 16, 
-                                  [0.25] * 16]
+                                  [0.25] * 16],
+                     "ARCTIC":[   [0.5, 0.25, 0.25, 0.5, 0.25, 0.25],
+                                  [0.5, 0.25, 0.25, 0.5, 0.25, 0.25],
+                                  [0.5, 0.25, 0.25, 0.5, 0.25, 0.25],
+                                  [0.5, 0.25, 0.25, 0.5, 0.25, 0.25]]   
                                   }
     # Defines how many scale degrees will be used in each theme
     degrees_lst = {"WATER":5, 
                    "MOUNTAIN":6, 
                    "GRASSLAND":4,
-                   "FOREST":3}
+                   "FOREST":3,
+                   "ARCTIC":5}
     # Set the tempo of each theme
     tempo={"WATER":130, 
            "MOUNTAIN":100, 
            "GRASSLAND":130,
-           "FOREST":60}
+           "FOREST":60,
+           "ARCTIC":110}
 
     rhythms = rhythms_lst[theme]
     accompaniment = accompaniment_lst[theme]
@@ -102,7 +112,8 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
     scales = {"WATER":{1:0, 2:2, 3:4, 4:7, 5:9},
               "MOUNTAIN":{1:0, 2:2, 3:3, 4:4, 5:5, 6:8},
               "GRASSLAND":{1:0, 2:4, 3:7, 4:9},
-              "FOREST":{1:0, 2:2, 3:4}}
+              "FOREST":{1:0, 2:2, 3:4},
+              "ARCTIC":{1:0, 2:2, 3:3, 4:7, 5:11}}
     scale = scales[theme]
 
     x = 0
@@ -110,7 +121,8 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
     octaves = {"WATER":60 + 12,
                "MOUNTAIN":60 - 12,
                "GRASSLAND":60 + 6,
-               "FOREST":60}
+               "FOREST":60,
+               "ARCTIC":60 + 16}
     octave = octaves[theme] + random.randint(-6, 6)
     
     # Keep track of when midi events happen 
@@ -164,10 +176,20 @@ def generate_song(image, theme="WATER", output="/tmp/default.mid"):
                     lnote -= 12
                 #print(lnote)
                 if b[i] > 0:
-                    if theme != "FOREST":
+                    if theme != "FOREST" or theme != "ARCTIC":
                         MyMIDI.addNote(track, 1, 
                                        lnote,
                                        time_lower, b[i], 100)
+                    elif theme == "ARCTIC":
+                        v = i % 3
+                        n = octave - 12
+                        if v == 1:
+                            n = n + 7 
+                        elif v == 2:
+                            n = n + 12
+                        MyMIDI.addNote(track, 1, 
+                                       v, time_lower, b[1], 100)
+                                        
                     else:
                         MyMIDI.addNote(track, 1, 
                                        lnote + arpeggio(i),
@@ -309,4 +331,6 @@ def songSAT(image_path, output_midi="/tmp/OUT.mid"):
 
 
 #songSAT("/home/alex/Documents/spaceapp/landsat/img.TIF")
-print(getClassification("/home/alex/Documents/spaceapp/landsat/img.TIF", 300))
+#print(getClassification("/home/alex/Documents/spaceapp/landsat/img.TIF", 300))
+generate_song("/home/alex/Pictures/52759611_325928751391358_5931559945576120320_n.jpg",
+              "ARCTIC", "/tmp/out.mid")
