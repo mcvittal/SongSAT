@@ -3,6 +3,8 @@ Hackathon entry for NASA Space Apps 2018. http://songsat.ca
 
 Converts image data to music given the theme. 
 
+This is NOT the website. This is the code that powers the music played on the website. To see the source code for the https://songsat.ca and how to modify it for your own use, head over to my repository here: http://github.com/mcvittal/mcvittal.github.cio
+
 ## Library dependencies 
 
 Spatial manipulation dependencies:  
